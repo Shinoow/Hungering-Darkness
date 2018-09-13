@@ -1,0 +1,25 @@
+{
+  	"modListVersion": 2,
+  	"modList": [
+  			{
+  				"modid": "hungeringdarkness",
+  				"name": "Hungering Darkness",
+  				"description": "The darkness slowly eats away at you. Be sure to bring many torches!",
+  				"mcversion": "${mcversion}",
+  				"version": "${version}",
+  				"authorList": [
+  						"shinoow"
+  				],
+  				"credits": "",
+  				"dependants": [  ],
+				"dependencies": [  ],
+				"parent": "",
+				"requiredMods": [  ],
+				"logoFile": "assets/hungeringdarkness/textures/logo.png",
+				"screenshots": [  ],
+				"updateUrl": "https://minecraft.curseforge.com/projects/hungering-darkness",
+  				"url": "https://minecraft.curseforge.com/projects/hungering-darkness",
+ 				"useDependencyInformation": true
+			}
+	]
+}

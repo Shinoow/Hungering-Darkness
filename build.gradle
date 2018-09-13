@@ -1,0 +1,130 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            // Required for the curseforge task
+            name = "gradle"
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+		classpath "gradle.plugin.com.matthewprenger:CurseGradle:1.1.0"
+    }
+}
+apply plugin: 'java'
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'com.matthewprenger.cursegradle'
+
+ext.propFile = file "build.properties"
+
+propFile.withReader {
+	
+	def prop = new Properties()
+	prop.load(it)
+	project.ext.props = new ConfigSlurper().parse prop
+}
+
+version = props.hd_version
+group = "com.shinoow.hungeringdarkness" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "Hungering Darkness"
+
+sourceCompatibility = targetCompatibility = '1.8'
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+minecraft {
+    version = "1.12.2-14.23.4.2705"
+    runDir = "run"
+    
+    mappings = "snapshot_20180421"
+    makeObfSourceJar = false
+
+    replaceIn "HungeringDarkness.java"
+        replace "forgeversion", props.forge_version
+		replace "hd_version", props.hd_version
+		replace "cert_fingerprint", project.findProperty('signSHA1')
+}
+
+dependencies {
+
+}
+
+version = "${props.mc_version}-${props.hd_version}"
+
+processResources {
+	// I really don't want that file to exist anywhere
+	exclude '**/Thumbs.db'
+
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+		include 'version.properties'
+
+        // replace version and mcversion
+        expand ([
+			'version':project.version,
+			'hdversion':project.props.hd_version,
+			'mcversion':project.props.mc_version,
+			'forgeversion':project.props.forge_version
+		])
+    }
+        
+    // copy everything else except the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+		exclude 'version.properties'
+    }
+}
+
+task srcJar(type: Jar) {
+    from sourceSets.main.allJava
+	
+	extension = 'jar'
+	classifier = 'sources'
+}
+
+artifacts {
+    archives srcJar
+}
+
+curseforge {
+    apiKey = project.hasProperty('curseForgeApiKey') ? project.curseForgeApiKey : '' // gradle curse -Pcurseforge_key=your-api-key
+	project{
+		id = "302941" // http://minecraft.curseforge.com/mc-mods/"xxxxxx"-projectname
+		releaseType = project.props.release_type //alpha beta release
+		changelogType = 'html'
+		changelog = new File('changelog.html') //must have at least an empty string
+		addArtifact srcJar
+	}
+}
+
+task signJar(type: SignJar, dependsOn: reobfJar) {
+
+    // Skips if the keyStore property is missing.
+    onlyIf {
+        project.hasProperty('keyStore')
+    }
+
+    // findProperty allows us to reference the property without it existing. 
+    // Using project.propName would cause the script to fail validation if 
+    // the property did not exist. 
+    keyStore = project.findProperty('keyStore')
+    alias = project.findProperty('keyStoreAlias')
+    storePass = project.findProperty('keyStorePass')
+    keyPass = project.findProperty('keyStoreKeyPass')
+    inputFile = jar.archivePath
+    outputFile = jar.archivePath
+}
+
+// Runs this task automatically when build is ran. 
+build.dependsOn signJar
