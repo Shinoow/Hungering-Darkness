@@ -15,6 +15,7 @@ public class DarknessTimerCapabilityStorage implements IStorage<IDarknessTimerCa
 		NBTTagCompound properties = new NBTTagCompound();
 
 		properties.setInteger("DarknessTimer", instance.getTimer());
+		properties.setBoolean("DynLightsMode", instance.hasDynamicLights());
 
 		return properties;
 	}
@@ -24,5 +25,6 @@ public class DarknessTimerCapabilityStorage implements IStorage<IDarknessTimerCa
 		NBTTagCompound properties = (NBTTagCompound)nbt;
 
 		instance.setTimer(properties.getInteger("DarknessTimer"));
+		instance.setHasDynamicLights(properties.getBoolean("DynLightsMode"));
 	}
 }

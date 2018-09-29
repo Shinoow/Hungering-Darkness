@@ -3,6 +3,7 @@ package com.shinoow.hungeringdarkness.common.cap;
 public class DarknessTimerCapability implements IDarknessTimerCapability {
 
 	private int timer;
+	private boolean dynLights;
 
 	@Override
 	public void incrementTimer(){
@@ -26,7 +27,18 @@ public class DarknessTimerCapability implements IDarknessTimerCapability {
 	}
 
 	@Override
+	public void setHasDynamicLights(boolean bool){
+		dynLights = bool;
+	}
+
+	@Override
+	public boolean hasDynamicLights(){
+		return dynLights;
+	}
+
+	@Override
 	public void copy(IDarknessTimerCapability cap) {
 		timer = cap.getTimer();
+		dynLights = cap.hasDynamicLights();
 	}
 }

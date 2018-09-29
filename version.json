@@ -1,10 +1,11 @@
 {
     "homepage": "https://minecraft.curseforge.com/projects/hungering-darkness",
     "promos": {
-      "1.12.2-latest": "1.0.0",
-      "1.12.2-recommended": "1.0.0"
+      "1.12.2-latest": "1.1.0",
+      "1.12.2-recommended": "1.1.0"
     },
     "1.12.2": {
+      "1.1.0": "- Added support for Dynamic Lights (and a confg option to disable said compatibility)\n- Added support for Game Stages (the config file has two lists where you can specify stages where the darkness hurts you and stages where it doesn't)\n- Added a config option to convert the dimension whitelist into a blacklist",
       "1.0.0": "- Initial release!"
     }
   }

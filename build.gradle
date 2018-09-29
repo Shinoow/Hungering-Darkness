@@ -20,6 +20,13 @@ apply plugin: 'java'
 apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'com.matthewprenger.cursegradle'
 
+repositories {
+	maven {
+		name 'Darkhax'
+		url "https://maven.mcmoddev.com/"
+	}
+}
+
 ext.propFile = file "build.properties"
 
 propFile.withReader {
@@ -52,7 +59,8 @@ minecraft {
 }
 
 dependencies {
-
+	deobfCompile "net.darkhax.bookshelf:Bookshelf-1.12.2:2.3.556"
+    deobfCompile "net.darkhax.gamestages:GameStages-1.12.2:2.0.98"
 }
 
 version = "${props.mc_version}-${props.hd_version}"
