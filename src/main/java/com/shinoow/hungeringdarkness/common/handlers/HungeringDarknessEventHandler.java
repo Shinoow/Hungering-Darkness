@@ -11,6 +11,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EnumSkyBlock;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
@@ -29,12 +30,10 @@ public class HungeringDarknessEventHandler {
 			EntityPlayer player = (EntityPlayer)event.getEntityLiving();
 			if(player.capabilities.isCreativeMode) return;
 			if(player.isSpectator()) return;
+			if(player.posY >= HungeringDarkness.height) return;
 			IDarknessTimerCapability cap = player.getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null);
-			if(player.getEntityWorld().getLightFor(EnumSkyBlock.SKY, player.getPosition()) <= HungeringDarkness.light_level &&
-					player.getEntityWorld().getLightFor(EnumSkyBlock.BLOCK, player.getPosition()) <= HungeringDarkness.light_level &&
-					dynamicLightsCheck(player, cap) && GameStagesHandler.shouldDarknessHurt(player)) {
-				boolean totalDarkness = player.getEntityWorld().getLightFor(EnumSkyBlock.SKY, player.getPosition()) <= HungeringDarkness.total_darkness &&
-						player.getEntityWorld().getLightFor(EnumSkyBlock.BLOCK, player.getPosition()) <= HungeringDarkness.total_darkness;
+			if(getLight(player) <= HungeringDarkness.light_level && dynamicLightsCheck(player, cap) && GameStagesHandler.shouldDarknessHurt(player)) {
+				boolean totalDarkness = getLight(player) <= HungeringDarkness.total_darkness;
 				if(cap.getTimer() < HungeringDarkness.delay * 20) {
 					cap.incrementTimer();
 					if(totalDarkness)
@@ -74,6 +73,12 @@ public class HungeringDarknessEventHandler {
 			|| stack1.getItemDamage() == stack.getItemDamage()))
 				return false;
 		return true;
+	}
+
+	private int getLight(Entity entityIn)
+	{
+		BlockPos blockpos = new BlockPos(entityIn.posX, entityIn.getEntityBoundingBox().minY, entityIn.posZ);
+		return entityIn.world.getLightFromNeighbors(blockpos);
 	}
 
 	@SubscribeEvent

@@ -53,7 +53,7 @@ public class HungeringDarkness {
 
 	public static Configuration cfg;
 
-	public static int damageFrequency, damage, delay, light_level, total_darkness;
+	public static int damageFrequency, damage, delay, light_level, total_darkness, height;
 	public static int[] dimWhitelist;
 	public static String[] dynLightsList, hurt_stages, nohurt_stages;
 	public static boolean useBlacklist, dynamicLightsMode;
@@ -119,6 +119,7 @@ public class HungeringDarkness {
 				+ "(and Dynamic Lights Mode is enabled).\nFormat: modid:name:meta, where meta is optional.\n"+TextFormatting.RED+"[Minecraft Restart Required]"+TextFormatting.RESET).getStringList();
 		hurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the non-hurting stages (higher number = higher priority).").getStringList();
 		nohurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Non-hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness doesn't hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the hurting stages (higher number = higher priority).").getStringList();
+		height = cfg.getInt("Damage Height", Configuration.CATEGORY_GENERAL, 256, 0, 256, "The y-level where the you're considered safe from the darkness regardless of light level. Going below this y-level will make the darkness damage you again.");
 
 		if(cfg.hasChanged())
 			cfg.save();
