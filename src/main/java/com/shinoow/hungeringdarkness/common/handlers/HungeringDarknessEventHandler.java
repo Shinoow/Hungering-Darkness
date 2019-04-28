@@ -9,10 +9,10 @@ import com.shinoow.hungeringdarkness.common.network.server.DynamicLightsMessage;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.EnumSkyBlock;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -32,17 +32,18 @@ public class HungeringDarknessEventHandler {
 			if(player.isSpectator()) return;
 			if(player.posY >= HungeringDarkness.height) return;
 			IDarknessTimerCapability cap = player.getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null);
-			if(getLight(player) <= HungeringDarkness.light_level && dynamicLightsCheck(player, cap) && GameStagesHandler.shouldDarknessHurt(player)) {
-				boolean totalDarkness = getLight(player) <= HungeringDarkness.total_darkness;
-				if(cap.getTimer() < HungeringDarkness.delay * 20) {
-					cap.incrementTimer();
-					if(totalDarkness)
+			if(player.isInWater() && player.getAir() == 300 && player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState() || !player.isInWater())
+				if(getLight(player) <= HungeringDarkness.light_level && dynamicLightsCheck(player, cap) && GameStagesHandler.shouldDarknessHurt(player)) {
+					boolean totalDarkness = getLight(player) <= HungeringDarkness.total_darkness;
+					if(cap.getTimer() < HungeringDarkness.delay * 20) {
 						cap.incrementTimer();
-				}
-				else if(player.ticksExisted % (HungeringDarkness.damageFrequency * 20) / (totalDarkness ? 2 : 1) == 0)
-					player.attackEntityFrom(HungeringDarkness.darkness, HungeringDarkness.damage * (totalDarkness ? 2 : 1));
-			} else if(cap.getTimer() > 0)
-				cap.decrementTimer();
+						if(totalDarkness)
+							cap.incrementTimer();
+					}
+					else if(player.ticksExisted % (HungeringDarkness.damageFrequency * 20) / (totalDarkness ? 2 : 1) == 0)
+						player.attackEntityFrom(HungeringDarkness.darkness, HungeringDarkness.damage * (totalDarkness ? 2 : 1));
+				} else if(cap.getTimer() > 0)
+					cap.decrementTimer();
 		}
 	}
 
