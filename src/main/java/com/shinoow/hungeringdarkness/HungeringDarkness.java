@@ -4,11 +4,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.List;
 
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.google.common.collect.Lists;
 import com.shinoow.hungeringdarkness.common.CommonProxy;
 import com.shinoow.hungeringdarkness.common.cap.DarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.cap.DarknessTimerCapabilityStorage;
@@ -16,11 +16,7 @@ import com.shinoow.hungeringdarkness.common.cap.IDarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.handlers.HungeringDarknessEventHandler;
 import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHandler;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.config.Configuration;
@@ -31,7 +27,6 @@ import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.Mod.Metadata;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.oredict.OreDictionary;
 
 @Mod(modid = HungeringDarkness.modid, name = HungeringDarkness.name, version = HungeringDarkness.version, dependencies = "required-after:forge@[forgeversion,);required-after:darknesslib@[1.0.0,)", acceptedMinecraftVersions = "[1.12.2]", guiFactory = "com.shinoow.hungeringdarkness.client.config.HungeringDarknessGuiFactory", updateJSON = "https://raw.githubusercontent.com/Shinoow/Hungering-Darkness/master/version.json", useMetadata = false, certificateFingerprint = "cert_fingerprint")
 public class HungeringDarkness {
@@ -55,9 +50,11 @@ public class HungeringDarkness {
 	public static int damageFrequency, damage, delay, light_level, total_darkness, height;
 	public static int[] dimWhitelist;
 	public static String[] hurt_stages, nohurt_stages;
-	public static boolean useBlacklist;
+	public static boolean useBlacklist, unrealisticLight;
 
 	public static DamageSource darkness = new DamageSource("darkness").setDamageBypassesArmor().setDamageIsAbsolute();
+
+	public static Logger LOGGER = LogManager.getLogger("Hungering Darkness");
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event){
@@ -89,7 +86,7 @@ public class HungeringDarkness {
 
 	@EventHandler
 	public void onFingerprintViolation(FMLFingerprintViolationEvent event) {
-		FMLLog.log("Hungering Darkness", Level.WARN, "Invalid fingerprint detected! The file " + event.getSource().getName() + " may have been tampered with. This version will NOT be supported by the author!");
+		LOGGER.log(Level.WARN, "Invalid fingerprint detected! The file " + event.getSource().getName() + " may have been tampered with. This version will NOT be supported by the author!");
 	}
 
 	@SubscribeEvent
@@ -112,6 +109,7 @@ public class HungeringDarkness {
 		hurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the non-hurting stages (higher number = higher priority).").getStringList();
 		nohurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Non-hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness doesn't hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the hurting stages (higher number = higher priority).").getStringList();
 		height = cfg.getInt("Damage Height", Configuration.CATEGORY_GENERAL, 256, 0, 256, "The y-level where the you're considered safe from the darkness regardless of light level. Going below this y-level will make the darkness damage you again.");
+		unrealisticLight = cfg.get(Configuration.CATEGORY_GENERAL, "Unrealistic Light", false, "Toggles whether or not Dynamic Light behaves as if the player is fully lit up, rather than adding to the light level. Faking full brightness is what the old behavior did.").getBoolean();
 
 		if(cfg.hasChanged())
 			cfg.save();
@@ -127,7 +125,7 @@ public class HungeringDarkness {
 			nameFile.close();
 
 		} catch (IOException e) {
-			FMLLog.log("Hungering Darkness", Level.ERROR, "Failed to fetch supporter list, using local version!");
+			LOGGER.log(Level.ERROR, "Failed to fetch supporter list, using local version!");
 			names = "Tedyhere";
 		}
 

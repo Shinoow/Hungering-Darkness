@@ -30,8 +30,8 @@ public class HungeringDarknessEventHandler {
 			if(player.isRiding() && DarknessLibAPI.getInstance().isVehicle(player.getRidingEntity())) return;
 			IDarknessTimerCapability cap = player.getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null);
 			if(player.isInWater() && player.getAir() == 300 && player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState() || !player.isInWater()) {
-				int light = DarknessLibAPI.getInstance().getLightWithDynLights(player, true);
-				if(light <= HungeringDarkness.light_level && GameStagesHandler.shouldDarknessHurt(player)) {
+				int light = HungeringDarkness.unrealisticLight ? DarknessLibAPI.getInstance().getLight(player, true) : DarknessLibAPI.getInstance().getLightWithDynLights(player, true);
+				if(light <= HungeringDarkness.light_level && dynamicLightsCheck(player) && GameStagesHandler.shouldDarknessHurt(player)) {
 					boolean totalDarkness = light <= HungeringDarkness.total_darkness;
 					if(cap.getTimer() < HungeringDarkness.delay * 20) {
 						cap.incrementTimer();
@@ -46,6 +46,10 @@ public class HungeringDarknessEventHandler {
 		}
 	}
 
+	private boolean dynamicLightsCheck(EntityPlayer player) {
+		return HungeringDarkness.unrealisticLight ? !DarknessLibAPI.getInstance().isIlluminatedDynamically(player) : !HungeringDarkness.unrealisticLight;
+	}
+	
 	private boolean isWhitelisted(int dim){
 		if(!HungeringDarkness.useBlacklist) {
 			return Arrays.stream(HungeringDarkness.dimWhitelist).anyMatch(id -> id == dim);
