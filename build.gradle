@@ -25,6 +25,10 @@ repositories {
 		name 'Darkhax'
 		url "https://maven.mcmoddev.com/"
 	}
+    maven {
+        name = "CurseForge"
+        url = "https://minecraft.curseforge.com/api/maven/"
+	}
 }
 
 ext.propFile = file "build.properties"
@@ -46,10 +50,10 @@ compileJava {
 }
 
 minecraft {
-    version = "1.12.2-14.23.4.2705"
+    version = "1.12.2-14.23.5.2847"
     runDir = "run"
     
-    mappings = "snapshot_20180421"
+    mappings = "stable_nodoc_39"
     makeObfSourceJar = false
 
     replaceIn "HungeringDarkness.java"
@@ -61,6 +65,7 @@ minecraft {
 dependencies {
 	deobfCompile "net.darkhax.bookshelf:Bookshelf-1.12.2:2.3.556"
     deobfCompile "net.darkhax.gamestages:GameStages-1.12.2:2.0.98"
+    deobfCompile "darknesslib:DarknessLib:1.12.2:1.0.0";
 }
 
 version = "${props.mc_version}-${props.hd_version}"

@@ -15,7 +15,6 @@ import com.shinoow.hungeringdarkness.common.cap.DarknessTimerCapabilityStorage;
 import com.shinoow.hungeringdarkness.common.cap.IDarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.handlers.HungeringDarknessEventHandler;
 import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHandler;
-import com.shinoow.hungeringdarkness.common.network.PacketDispatcher;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -34,7 +33,7 @@ import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.oredict.OreDictionary;
 
-@Mod(modid = HungeringDarkness.modid, name = HungeringDarkness.name, version = HungeringDarkness.version, dependencies = "required-after:forge@[forgeversion,)", acceptedMinecraftVersions = "[1.12.2]", guiFactory = "com.shinoow.hungeringdarkness.client.config.HungeringDarknessGuiFactory", updateJSON = "https://raw.githubusercontent.com/Shinoow/Hungering-Darkness/master/version.json", useMetadata = false, certificateFingerprint = "cert_fingerprint")
+@Mod(modid = HungeringDarkness.modid, name = HungeringDarkness.name, version = HungeringDarkness.version, dependencies = "required-after:forge@[forgeversion,);required-after:darknesslib@[1.0.0,)", acceptedMinecraftVersions = "[1.12.2]", guiFactory = "com.shinoow.hungeringdarkness.client.config.HungeringDarknessGuiFactory", updateJSON = "https://raw.githubusercontent.com/Shinoow/Hungering-Darkness/master/version.json", useMetadata = false, certificateFingerprint = "cert_fingerprint")
 public class HungeringDarkness {
 
 	public static final String version = "hd_version";
@@ -55,10 +54,8 @@ public class HungeringDarkness {
 
 	public static int damageFrequency, damage, delay, light_level, total_darkness, height;
 	public static int[] dimWhitelist;
-	public static String[] dynLightsList, hurt_stages, nohurt_stages;
-	public static boolean useBlacklist, dynamicLightsMode;
-
-	public static final List<ItemStack> dynamic_lights_list = Lists.newArrayList();
+	public static String[] hurt_stages, nohurt_stages;
+	public static boolean useBlacklist;
 
 	public static DamageSource darkness = new DamageSource("darkness").setDamageBypassesArmor().setDamageIsAbsolute();
 
@@ -74,7 +71,6 @@ public class HungeringDarkness {
 		syncConfig();
 
 		CapabilityManager.INSTANCE.register(IDarknessTimerCapability.class, DarknessTimerCapabilityStorage.instance, DarknessTimerCapability::new);
-		PacketDispatcher.registerPackets();
 
 		proxy.preInit();
 	}
@@ -89,7 +85,6 @@ public class HungeringDarkness {
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent event){
 		proxy.postInit();
-		buildItemList();
 	}
 
 	@EventHandler
@@ -114,27 +109,12 @@ public class HungeringDarkness {
 		light_level = cfg.getInt("Light Level", Configuration.CATEGORY_GENERAL, 4, 0, 15, "The light level where it's considered dark enough that you begin to receive damage.");
 		total_darkness = cfg.getInt("Total Darkness Light Level", Configuration.CATEGORY_GENERAL, 0, -1, 15, "The light level that's considered total darkness. Being in this light level halves the time it takes before you start to receive damage, while also doubling the damage receieved. Disable by setting it to -1.");
 		useBlacklist = cfg.get(Configuration.CATEGORY_GENERAL, "Use Blacklist", false, "Toggles whether or not to use the dimension whitelist as a blacklist instead.").getBoolean();
-		dynamicLightsMode = cfg.get(Configuration.CATEGORY_GENERAL, "Dynamic Lights Mode", false, "If this is enabled (client and server), you will be able to prevent darkness damage with handheld light sources while AtomicStryker's Dynamic Lights is present.").getBoolean();
-		dynLightsList = cfg.get(Configuration.CATEGORY_GENERAL, "Dynamic Lights List", new String[]{"minecraft:torch", "minecraft:redstone_torch", "minecraft:glowstone"}, "Items/Blocks added to this list will be regarded as handheld light sources while AtomicStryker's Dynamic Lights is present"
-				+ "(and Dynamic Lights Mode is enabled).\nFormat: modid:name:meta, where meta is optional.\n"+TextFormatting.RED+"[Minecraft Restart Required]"+TextFormatting.RESET).getStringList();
 		hurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the non-hurting stages (higher number = higher priority).").getStringList();
 		nohurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Non-hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness doesn't hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the hurting stages (higher number = higher priority).").getStringList();
 		height = cfg.getInt("Damage Height", Configuration.CATEGORY_GENERAL, 256, 0, 256, "The y-level where the you're considered safe from the darkness regardless of light level. Going below this y-level will make the darkness damage you again.");
 
 		if(cfg.hasChanged())
 			cfg.save();
-	}
-
-	private void buildItemList(){
-		if(dynLightsList.length > 0)
-			for(String str : dynLightsList)
-				if(str.length() > 0){
-					String[] stuff = str.split(":");
-					Item item = Item.REGISTRY.getObject(new ResourceLocation(stuff[0], stuff[1]));
-					if(item != null)
-						dynamic_lights_list.add(new ItemStack(item, 1, stuff.length == 3 ? Integer.valueOf(stuff[2]) : OreDictionary.WILDCARD_VALUE));
-					else FMLLog.log("Hungering Darkness", Level.ERROR, "%s is not a valid Item!", str);
-				}
 	}
 
 	private String getSupporterList(){

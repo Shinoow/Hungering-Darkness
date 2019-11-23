@@ -1,25 +1,21 @@
 package com.shinoow.hungeringdarkness.common.handlers;
 
+import java.util.Arrays;
+
+import com.shinoow.darknesslib.api.DarknessLibAPI;
 import com.shinoow.hungeringdarkness.HungeringDarkness;
 import com.shinoow.hungeringdarkness.common.cap.DarknessCapabilityProvider;
 import com.shinoow.hungeringdarkness.common.cap.IDarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHandler;
-import com.shinoow.hungeringdarkness.common.network.PacketDispatcher;
-import com.shinoow.hungeringdarkness.common.network.server.DynamicLightsMessage;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
-import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.oredict.OreDictionary;
 
 public class HungeringDarknessEventHandler {
 
@@ -31,10 +27,12 @@ public class HungeringDarknessEventHandler {
 			if(player.capabilities.isCreativeMode) return;
 			if(player.isSpectator()) return;
 			if(player.posY >= HungeringDarkness.height) return;
+			if(player.isRiding() && DarknessLibAPI.getInstance().isVehicle(player.getRidingEntity())) return;
 			IDarknessTimerCapability cap = player.getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null);
-			if(player.isInWater() && player.getAir() == 300 && player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState() || !player.isInWater())
-				if(getLight(player) <= HungeringDarkness.light_level && dynamicLightsCheck(player, cap) && GameStagesHandler.shouldDarknessHurt(player)) {
-					boolean totalDarkness = getLight(player) <= HungeringDarkness.total_darkness;
+			if(player.isInWater() && player.getAir() == 300 && player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState() || !player.isInWater()) {
+				int light = DarknessLibAPI.getInstance().getLightWithDynLights(player, true);
+				if(light <= HungeringDarkness.light_level && GameStagesHandler.shouldDarknessHurt(player)) {
+					boolean totalDarkness = light <= HungeringDarkness.total_darkness;
 					if(cap.getTimer() < HungeringDarkness.delay * 20) {
 						cap.incrementTimer();
 						if(totalDarkness)
@@ -44,42 +42,16 @@ public class HungeringDarknessEventHandler {
 						player.attackEntityFrom(HungeringDarkness.darkness, HungeringDarkness.damage * (totalDarkness ? 2 : 1));
 				} else if(cap.getTimer() > 0)
 					cap.decrementTimer();
+			}
 		}
 	}
 
 	private boolean isWhitelisted(int dim){
 		if(!HungeringDarkness.useBlacklist) {
-			for(int id : HungeringDarkness.dimWhitelist)
-				if(id == dim)
-					return true;
-			return false;
+			return Arrays.stream(HungeringDarkness.dimWhitelist).anyMatch(id -> id == dim);
 		} else {
-			for(int id : HungeringDarkness.dimWhitelist)
-				if(id == dim)
-					return false;
-			return true;
+			return Arrays.stream(HungeringDarkness.dimWhitelist).noneMatch(id -> id == dim);
 		}
-	}
-
-	private boolean dynamicLightsCheck(EntityPlayer player, IDarknessTimerCapability cap) {
-		if(HungeringDarkness.dynamicLightsMode && cap.hasDynamicLights())
-			return isNotLightSource(player.getHeldItemMainhand())  && isNotLightSource(player.getHeldItemOffhand());
-		return true;
-	}
-
-	private boolean isNotLightSource(ItemStack stack){
-		if(stack.isEmpty()) return true;
-		for(ItemStack stack1 : HungeringDarkness.dynamic_lights_list)
-			if(stack1.getItem() == stack.getItem() && (stack1.getItemDamage() == OreDictionary.WILDCARD_VALUE
-			|| stack1.getItemDamage() == stack.getItemDamage()))
-				return false;
-		return true;
-	}
-
-	private int getLight(Entity entityIn)
-	{
-		BlockPos blockpos = new BlockPos(entityIn.posX, entityIn.getEntityBoundingBox().minY, entityIn.posZ);
-		return entityIn.world.getLightFromNeighbors(blockpos);
 	}
 
 	@SubscribeEvent
@@ -92,13 +64,5 @@ public class HungeringDarknessEventHandler {
 	public void onClonePlayer(PlayerEvent.Clone event) {
 		if(event.isWasDeath())
 			event.getEntityPlayer().getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null).copy(event.getOriginal().getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null));
-	}
-
-	@SubscribeEvent
-	public void onEntityJoinWorld(EntityJoinWorldEvent event) {
-		if (event.getEntity() instanceof EntityPlayer && event.getWorld().isRemote){
-			if(!HungeringDarkness.dynamicLightsMode) return;
-			PacketDispatcher.sendToServer(new DynamicLightsMessage(Loader.isModLoaded("dynamiclights")));
-		}
 	}
 }

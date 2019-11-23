@@ -10,9 +10,5 @@ public interface IDarknessTimerCapability {
 
 	public void setTimer(int timer);
 
-	public void setHasDynamicLights(boolean bool);
-
-	public boolean hasDynamicLights();
-
 	public void copy(IDarknessTimerCapability cap);
 }
