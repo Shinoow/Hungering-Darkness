@@ -1,10 +1,11 @@
 {
     "homepage": "https://minecraft.curseforge.com/projects/hungering-darkness",
     "promos": {
-      "1.12.2-latest": "1.2.1",
-      "1.12.2-recommended": "1.2.1"
+      "1.12.2-latest": "1.3.0",
+      "1.12.2-recommended": "1.3.0"
     },
     "1.12.2": {
+      "1.3.0": "- Now uses DarknessLib\n- Removed the \"Dynamic Lights Mode\" and \"Dynamic Lights List\" config options (in favor of DarknessLib)\n- The timer pauses if you're riding in a minecart, boat, or similar vehicle\n- Dynamic Light is now added to the player's light level, instead of defaulting to bright enough if holding any handheld light source\n- Added a config option to go back to the old Dynamic Lights behavior\n- Added a configurable list of dimension-specific overrides for the majority of the available config options\n- Added a configurable biome whitelist for biomes where the darkness can hurt players\n- Added a config option to turn the biome whitelist into a blacklist",
       "1.2.1": "- The darkness no longer hurts you while fully submerged in water",
       "1.2.0": "- Added a config option to set a y-level for when the darkness will begin to damage you\n- Improved the skylight checks (courtesy of Laike Endaril)",
       "1.1.0": "- Added support for Dynamic Lights (and a confg option to disable said compatibility)\n- Added support for Game Stages (the config file has two lists where you can specify stages where the darkness hurts you and stages where it doesn't)\n- Added a config option to convert the dimension whitelist into a blacklist",
