@@ -13,6 +13,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.biome.Biome;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -23,7 +24,8 @@ public class HungeringDarknessEventHandler {
 	@SubscribeEvent
 	public void darkness(LivingUpdateEvent event){
 		if(event.getEntityLiving().world.isRemote) return;
-		if(event.getEntityLiving() instanceof EntityPlayer && isWhitelisted(event.getEntityLiving().world.provider.getDimension())){
+		if(event.getEntityLiving() instanceof EntityPlayer && isWhitelisted(event.getEntityLiving().world.provider.getDimension())
+				&& isWhitelisted(event.getEntityLiving().world.getBiome(event.getEntityLiving().getPosition()))){
 			EntityPlayer player = (EntityPlayer)event.getEntityLiving();
 			if(player.capabilities.isCreativeMode) return;
 			if(player.isSpectator()) return;
@@ -58,6 +60,10 @@ public class HungeringDarknessEventHandler {
 		} else {
 			return Arrays.stream(HungeringDarkness.dimWhitelist).noneMatch(id -> id == dim);
 		}
+	}
+
+	private boolean isWhitelisted(Biome biome) {
+		return HungeringDarkness.biome_whitelist.isEmpty() || HungeringDarkness.useBiomeBlacklist ? !HungeringDarkness.biome_whitelist.contains(biome) : HungeringDarkness.biome_whitelist.contains(biome);
 	}
 
 	@SubscribeEvent

@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Level;
@@ -22,6 +20,8 @@ import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHa
 import com.shinoow.hungeringdarkness.common.util.DimensionData;
 
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.biome.Biome;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.config.Configuration;
@@ -32,6 +32,7 @@ import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.Mod.Metadata;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 @Mod(modid = HungeringDarkness.modid, name = HungeringDarkness.name, version = HungeringDarkness.version, dependencies = "required-after:forge@[forgeversion,);required-after:darknesslib@[1.0.0,)", acceptedMinecraftVersions = "[1.12.2]", guiFactory = "com.shinoow.hungeringdarkness.client.config.HungeringDarknessGuiFactory", updateJSON = "https://raw.githubusercontent.com/Shinoow/Hungering-Darkness/master/version.json", useMetadata = false, certificateFingerprint = "cert_fingerprint")
 public class HungeringDarkness {
@@ -54,10 +55,12 @@ public class HungeringDarkness {
 
 	public static int damageFrequency, damage, delay, light_level, total_darkness, height;
 	public static int[] dimWhitelist;
-	public static String[] hurt_stages, nohurt_stages;
-	public static boolean useBlacklist, unrealisticLight;
+	public static String[] hurt_stages, nohurt_stages, biomeWhitelist;
+	public static boolean useBlacklist, unrealisticLight, useBiomeBlacklist;
 
 	private static DimensionData config_default;
+
+	public static final List<Biome> biome_whitelist = new ArrayList<>();
 
 	public static Map<Integer, DimensionData> dimension_configs = new HashMap<>();
 
@@ -92,6 +95,7 @@ public class HungeringDarkness {
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent event){
 		proxy.postInit();
+		Arrays.stream(biomeWhitelist).map(b -> new ResourceLocation(b)).forEach(b -> addBiomeToList(b));
 	}
 
 	@EventHandler
@@ -101,8 +105,11 @@ public class HungeringDarkness {
 
 	@SubscribeEvent
 	public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs) {
-		if(eventArgs.getModID().equals(modid))
+		if(eventArgs.getModID().equals(modid)) {
 			syncConfig();
+			biome_whitelist.clear();
+			Arrays.stream(biomeWhitelist).map(b -> new ResourceLocation(b)).forEach(b -> addBiomeToList(b));
+		}
 	}
 
 	private static void syncConfig(){
@@ -124,11 +131,19 @@ public class HungeringDarkness {
 				+ "\nFormat: dim_id:damage_frequency:damage:delay:light_level:total_darkness:height"
 				+ "\nEvery value except dim_id can be substituted with def, which'll set the value to whatever the global config uses."
 				+ "\nExample: '0:10:def:60:4:-1:128'").getStringList();
+		biomeWhitelist = cfg.get(Configuration.CATEGORY_GENERAL, "Biome Whitelist", new String[0], "Add biome IDs to this list if you want the darkness to damage players here. The list won't be used if it's empty.\nFormat: modid:name").getStringList();
+		useBiomeBlacklist = cfg.get(Configuration.CATEGORY_GENERAL, "Use Biome Blacklist", false, "Toggles whether or not to use the biome whitelist as a blacklist instead.").getBoolean();
 
 		dimension_configs = Arrays.stream(data).map(s -> s.trim().split(":")).collect(Collectors.toMap(s -> Integer.parseInt(s[0]), s -> new DimensionData(s)));
 
 		if(cfg.hasChanged())
 			cfg.save();
+	}
+
+	private static void addBiomeToList(ResourceLocation res) {
+		if(ForgeRegistries.BIOMES.containsKey(res))
+			biome_whitelist.add(ForgeRegistries.BIOMES.getValue(res));
+		else LOGGER.log(Level.ERROR, "{} is not a valid Biome!", res);
 	}
 
 	public static DimensionData getDimensionConfig(int id) {
