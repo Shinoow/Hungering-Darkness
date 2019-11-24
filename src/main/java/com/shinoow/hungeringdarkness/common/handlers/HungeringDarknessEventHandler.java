@@ -7,6 +7,7 @@ import com.shinoow.hungeringdarkness.HungeringDarkness;
 import com.shinoow.hungeringdarkness.common.cap.DarknessCapabilityProvider;
 import com.shinoow.hungeringdarkness.common.cap.IDarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHandler;
+import com.shinoow.hungeringdarkness.common.util.DimensionData;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -26,20 +27,21 @@ public class HungeringDarknessEventHandler {
 			EntityPlayer player = (EntityPlayer)event.getEntityLiving();
 			if(player.capabilities.isCreativeMode) return;
 			if(player.isSpectator()) return;
-			if(player.posY >= HungeringDarkness.height) return;
 			if(player.isRiding() && DarknessLibAPI.getInstance().isVehicle(player.getRidingEntity())) return;
+			DimensionData data = HungeringDarkness.getDimensionConfig(player.dimension);
+			if(player.posY >= data.getHeight()) return;
 			IDarknessTimerCapability cap = player.getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null);
 			if(player.isInWater() && player.getAir() == 300 && player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState() || !player.isInWater()) {
 				int light = HungeringDarkness.unrealisticLight ? DarknessLibAPI.getInstance().getLight(player, true) : DarknessLibAPI.getInstance().getLightWithDynLights(player, true);
-				if(light <= HungeringDarkness.light_level && dynamicLightsCheck(player) && GameStagesHandler.shouldDarknessHurt(player)) {
-					boolean totalDarkness = light <= HungeringDarkness.total_darkness;
-					if(cap.getTimer() < HungeringDarkness.delay * 20) {
+				if(light <= data.getLightLevel() && dynamicLightsCheck(player) && GameStagesHandler.shouldDarknessHurt(player)) {
+					boolean totalDarkness = light <= data.getTotalDarkness();
+					if(cap.getTimer() < data.getDelay() * 20) {
 						cap.incrementTimer();
 						if(totalDarkness)
 							cap.incrementTimer();
 					}
-					else if(player.ticksExisted % (HungeringDarkness.damageFrequency * 20) / (totalDarkness ? 2 : 1) == 0)
-						player.attackEntityFrom(HungeringDarkness.darkness, HungeringDarkness.damage * (totalDarkness ? 2 : 1));
+					else if(player.ticksExisted % (data.getDamageFrequency() * 20) / (totalDarkness ? 2 : 1) == 0)
+						player.attackEntityFrom(HungeringDarkness.darkness, data.getDamage() * (totalDarkness ? 2 : 1));
 				} else if(cap.getTimer() > 0)
 					cap.decrementTimer();
 			}
@@ -49,7 +51,7 @@ public class HungeringDarknessEventHandler {
 	private boolean dynamicLightsCheck(EntityPlayer player) {
 		return HungeringDarkness.unrealisticLight ? !DarknessLibAPI.getInstance().isIlluminatedDynamically(player) : !HungeringDarkness.unrealisticLight;
 	}
-	
+
 	private boolean isWhitelisted(int dim){
 		if(!HungeringDarkness.useBlacklist) {
 			return Arrays.stream(HungeringDarkness.dimWhitelist).anyMatch(id -> id == dim);

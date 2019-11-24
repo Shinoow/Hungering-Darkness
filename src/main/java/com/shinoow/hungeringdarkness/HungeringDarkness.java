@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -15,6 +19,7 @@ import com.shinoow.hungeringdarkness.common.cap.DarknessTimerCapabilityStorage;
 import com.shinoow.hungeringdarkness.common.cap.IDarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.handlers.HungeringDarknessEventHandler;
 import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHandler;
+import com.shinoow.hungeringdarkness.common.util.DimensionData;
 
 import net.minecraft.util.DamageSource;
 import net.minecraftforge.common.MinecraftForge;
@@ -52,6 +57,10 @@ public class HungeringDarkness {
 	public static String[] hurt_stages, nohurt_stages;
 	public static boolean useBlacklist, unrealisticLight;
 
+	private static DimensionData config_default;
+
+	public static Map<Integer, DimensionData> dimension_configs = new HashMap<>();
+
 	public static DamageSource darkness = new DamageSource("darkness").setDamageBypassesArmor().setDamageIsAbsolute();
 
 	public static Logger LOGGER = LogManager.getLogger("Hungering Darkness");
@@ -66,6 +75,7 @@ public class HungeringDarkness {
 
 		cfg = new Configuration(event.getSuggestedConfigurationFile());
 		syncConfig();
+		config_default = new ConfigDimData();
 
 		CapabilityManager.INSTANCE.register(IDarknessTimerCapability.class, DarknessTimerCapabilityStorage.instance, DarknessTimerCapability::new);
 
@@ -110,9 +120,19 @@ public class HungeringDarkness {
 		nohurt_stages = cfg.get(Configuration.CATEGORY_GENERAL, "Non-hurting Stages", new String[] {}, "If Game Stages is installed, this list can be used to specify stages where the darkness doesn't hurt you. Format is stage:priority, where stage is the stage name and the priority is an integer that determines if this takes effect over the hurting stages (higher number = higher priority).").getStringList();
 		height = cfg.getInt("Damage Height", Configuration.CATEGORY_GENERAL, 256, 0, 256, "The y-level where the you're considered safe from the darkness regardless of light level. Going below this y-level will make the darkness damage you again.");
 		unrealisticLight = cfg.get(Configuration.CATEGORY_GENERAL, "Unrealistic Light", false, "Toggles whether or not Dynamic Light behaves as if the player is fully lit up, rather than adding to the light level. Faking full brightness is what the old behavior did.").getBoolean();
+		String[] data = cfg.get(Configuration.CATEGORY_GENERAL, "Dimension-specific Configuration", new String[0], "Values added to this list will allow you to define dimension-specific configurations that override any of the corresponding global ones defined in the other options. "
+				+ "\nFormat: dim_id:damage_frequency:damage:delay:light_level:total_darkness:height"
+				+ "\nEvery value except dim_id can be substituted with def, which'll set the value to whatever the global config uses."
+				+ "\nExample: '0:10:def:60:4:-1:128'").getStringList();
+
+		dimension_configs = Arrays.stream(data).map(s -> s.trim().split(":")).collect(Collectors.toMap(s -> Integer.parseInt(s[0]), s -> new DimensionData(s)));
 
 		if(cfg.hasChanged())
 			cfg.save();
+	}
+
+	public static DimensionData getDimensionConfig(int id) {
+		return dimension_configs.getOrDefault(id, config_default);
 	}
 
 	private String getSupporterList(){
@@ -130,5 +150,32 @@ public class HungeringDarkness {
 		}
 
 		return names;
+	}
+
+	private class ConfigDimData extends DimensionData {
+
+		public int getDamageFrequency() {
+			return damageFrequency;
+		}
+
+		public int getDamage() {
+			return damage;
+		}
+
+		public int getDelay() {
+			return delay;
+		}
+
+		public int getLightLevel() {
+			return light_level;
+		}
+
+		public int getTotalDarkness() {
+			return total_darkness;
+		}
+
+		public int getHeight() {
+			return height;
+		}
 	}
 }
