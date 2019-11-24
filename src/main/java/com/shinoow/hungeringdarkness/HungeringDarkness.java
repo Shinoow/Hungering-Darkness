@@ -169,26 +169,32 @@ public class HungeringDarkness {
 
 	private class ConfigDimData extends DimensionData {
 
+		@Override
 		public int getDamageFrequency() {
 			return damageFrequency;
 		}
 
+		@Override
 		public int getDamage() {
 			return damage;
 		}
 
+		@Override
 		public int getDelay() {
 			return delay;
 		}
 
+		@Override
 		public int getLightLevel() {
 			return light_level;
 		}
 
+		@Override
 		public int getTotalDarkness() {
 			return total_darkness;
 		}
 
+		@Override
 		public int getHeight() {
 			return height;
 		}

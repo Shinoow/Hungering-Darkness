@@ -23,7 +23,7 @@ public class HungeringDarknessEventHandler {
 
 	@SubscribeEvent
 	public void darkness(LivingUpdateEvent event){
-		if(event.getEntityLiving().world.isRemote) return;
+		if(event.getEntityLiving().world.isRemote || event.getEntityLiving().isDead) return;
 		if(event.getEntityLiving() instanceof EntityPlayer && isWhitelisted(event.getEntityLiving().world.provider.getDimension())
 				&& isWhitelisted(event.getEntityLiving().world.getBiome(event.getEntityLiving().getPosition()))){
 			EntityPlayer player = (EntityPlayer)event.getEntityLiving();
@@ -55,11 +55,10 @@ public class HungeringDarknessEventHandler {
 	}
 
 	private boolean isWhitelisted(int dim){
-		if(!HungeringDarkness.useBlacklist) {
+		if(!HungeringDarkness.useBlacklist)
 			return Arrays.stream(HungeringDarkness.dimWhitelist).anyMatch(id -> id == dim);
-		} else {
+		else
 			return Arrays.stream(HungeringDarkness.dimWhitelist).noneMatch(id -> id == dim);
-		}
 	}
 
 	private boolean isWhitelisted(Biome biome) {
