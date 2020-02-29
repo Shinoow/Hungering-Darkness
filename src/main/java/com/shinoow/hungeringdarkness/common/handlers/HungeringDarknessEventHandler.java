@@ -9,6 +9,7 @@ import com.shinoow.hungeringdarkness.common.cap.IDarknessTimerCapability;
 import com.shinoow.hungeringdarkness.common.integrations.gamestages.GameStagesHandler;
 import com.shinoow.hungeringdarkness.common.util.DimensionData;
 
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -33,8 +34,8 @@ public class HungeringDarknessEventHandler {
 			DimensionData data = HungeringDarkness.getDimensionConfig(player.dimension);
 			if(player.posY >= data.getHeight()) return;
 			IDarknessTimerCapability cap = player.getCapability(DarknessCapabilityProvider.DARKNESS_TIMER, null);
-			if(player.isInWater() && player.getAir() == 300 && player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState() || !player.isInWater()) {
-				int light = HungeringDarkness.unrealisticLight ? DarknessLibAPI.getInstance().getLight(player, true) : DarknessLibAPI.getInstance().getLightWithDynLights(player, true);
+			if(waterCheck(player)) {
+				int light = HungeringDarkness.unrealisticLight ? DarknessLibAPI.getInstance().getLight(player, true) : DarknessLibAPI.getInstance().getLightWithAdditions(player, true);
 				if(light <= data.getLightLevel() && dynamicLightsCheck(player) && GameStagesHandler.shouldDarknessHurt(player)) {
 					boolean totalDarkness = light <= data.getTotalDarkness();
 					if(cap.getTimer() < data.getDelay() * 20) {
@@ -63,6 +64,13 @@ public class HungeringDarknessEventHandler {
 
 	private boolean isWhitelisted(Biome biome) {
 		return HungeringDarkness.biome_whitelist.isEmpty() || HungeringDarkness.useBiomeBlacklist ? !HungeringDarkness.biome_whitelist.contains(biome) : HungeringDarkness.biome_whitelist.contains(biome);
+	}
+
+	private boolean waterCheck(EntityPlayer player) {
+		boolean ret = player.world.getBlockState(player.getPosition()).getMaterial() == Material.WATER &&
+				player.world.getBlockState(player.getPosition().down()).getMaterial() != Material.WATER &&
+				player.world.getBlockState(player.getPosition().up()) == Blocks.AIR.getDefaultState();
+		return player.isInWater() && player.getAir() == 300 && ret || !player.isInWater();
 	}
 
 	@SubscribeEvent
