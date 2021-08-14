@@ -72,7 +72,7 @@ public class HungeringDarkness {
 	public void preInit(FMLPreInitializationEvent event){
 
 		metadata = event.getModMetadata();
-		metadata.description = metadata.description +"\n\n\u00a76Supporters: "+getSupporterList()+"\u00a7r";
+		getSupporterList();
 		MinecraftForge.EVENT_BUS.register(this);
 		MinecraftForge.EVENT_BUS.register(new HungeringDarknessEventHandler());
 
@@ -150,21 +150,25 @@ public class HungeringDarkness {
 		return dimension_configs.getOrDefault(id, config_default);
 	}
 
-	private String getSupporterList(){
-		BufferedReader nameFile;
-		String names = "";
-		try {
-			nameFile = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/Shinoow/AbyssalCraft/master/supporters.txt").openStream()));
+	private void getSupporterList(){
+		new Thread("Hungering Darkness Get Supporters") {
+			public void run() {
+				BufferedReader nameFile;
+				String names = "";
+				try {
+					nameFile = new BufferedReader(new InputStreamReader(new URL("https://raw.githubusercontent.com/Shinoow/AbyssalCraft/master/supporters.txt").openStream()));
 
-			names = nameFile.readLine();
-			nameFile.close();
+					names = nameFile.readLine();
+					nameFile.close();
 
-		} catch (IOException e) {
-			LOGGER.log(Level.ERROR, "Failed to fetch supporter list, using local version!");
-			names = "Gentlemangamer2015";
-		}
+				} catch (IOException e) {
+					LOGGER.log(Level.ERROR, "Failed to fetch supporter list, using local version!");
+					names = "Jenni Mort, Simon.R.K";
+				}
 
-		return names;
+				metadata.description += String.format("\n\n\u00a76Supporters: %s\u00a7r", names);
+			}
+		}.start();
 	}
 
 	private class ConfigDimData extends DimensionData {
